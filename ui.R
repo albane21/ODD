@@ -36,17 +36,17 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
     dashboardSidebar(
             width = 200,
       sidebarMenu(
-        menuItem("Présentation de l'observatoire", tabName = "vue"),
+        menuItem("Présentation de l'observatoire", tabName = "home"),
         menuItem("Communes", tabName = "commune_choice", icon = icon("list-ol")),
         div( id = 'sidebar_cr',
              conditionalPanel("input.sidebar === 'commune_choice'",
                                selectizeInput("Liste_Communes",
-                                              "Choisi la commune de ton choix", 
-                                              choices =  "LIBGEO", 
+                                              "Choix de la commune", 
+                                              choices =  X18_25_non_insere$LIBGEO, 
                                              selected = NULL,  width = "200px",
                                               multiple = T), #,
                               actionButton('btn_build_country_report', 
-                                            paste0('Découvre ton bilan'),
+                                            paste0('Bilan de ta commune'),
                                             icon = icon('wrench')))),
         menuItem("ODD1", tabName = "ODD1"),
         menuItem("ODD2", tabName = "ODD2"),
@@ -70,7 +70,7 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
  dashboardBody(
              tabItems(
              tabItem(
-             "vue",
+             "commune_choice",
              box(
              title = "Vaujours",
              footer = textOutput("présentation_commune"),
@@ -115,7 +115,18 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
              tabPanel(title = "Prix médian", "contenu 1"),
              tabPanel(title = "Nombre", "contenu 2")
              )
+             ),
+                
+              tabItem(
+             "home",
+             box(
+             title = "Présentation de l'observatoire",
+             footer = textOutput("présentation_commune"),
+             status = "info",
+             solidHeader = TRUE,
+             width = 18
              )
+             )          
              ),
              skin = "red"
              )
