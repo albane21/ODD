@@ -1,8 +1,8 @@
 ## VAUJOURS
 <br><br>
 Commune située dans le département de la Seine-Saint-Denis (93).\
-Densité:\ 
-Habitants: 7 030 (2017)\ 
-Revenu médian:\
+Densité:    
+Habitants: 7 030 (2017)  
+Revenu médian:  
 
 <br><br><br>
