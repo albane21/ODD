@@ -7,7 +7,133 @@ library(markdown)
 library(tidyverse)
 library(hrbrthemes)
 library(viridis)
-windowsFonts()
+library(shinyBS)
+
+trying = X18_25_non_insere[X18_25_non_insere$LIBGEO =="IDF"| X18_25_non_insere$LIBGEO=="Groupe 1"|X18_25_non_insere$LIBGEO=="Vaujours",]
+
+shinyApp(  
+ui = tagList(
+    navbarPage(
+      theme = "cerulean",  # <--- To use a theme, uncomment this
+      "Observatoire des ODD IDF",
+      tabPanel(id="test","Présentation de l'observatoire",
+               bsTooltip("test", title="Test Title", trigger = "hover"),
+               mainPanel(
+                 tabsetPanel(
+                   tabPanel("Objectif",
+                            div(id = "my_id",                       #changed
+                                h5(" L'objectif de cet observatoire est de présenter l'évolution dans le temps de différents indicateurs au niveau communal.")
+                            ),                                      # changed
+                            bsTooltip('my_id','some text...')       # changed
+                   ),
+                   tabPanel("Présentation des ODD",
+                            h5("Les 17 Objectifs de Développement Durable (ODD ou Agenda 2030) ont été adoptés en septembre 2015 par 193 pays aux Nations Unies, 
+à la suite des Objectifs du Millénaire pour le Développement (OMD). Ils constituent un plan d’action pour la paix, l’humanité, la planète et la prospérité, 
+nécessitant la mise en oeuvre de partenariats multi-acteurs. Ils ambitionnent de transformer nos sociétés en éradiquant la pauvreté et en assurant une transition 
+juste vers un développement durable d'ici à 2030.")),
+                   tabPanel("Données utilisées", 
+                           h5("La géographie utilisée pour les indicateurs communaux est celle du 1er janvier 2020. Celle-ci est disponible à l'adresse suivante: https://www.insee.fr/fr/information/2028028"))
+                 )
+               )
+      ),
+      tabPanel("Choix de l'objectif de développement durable"),
+        
+      tabPanel("Choix de la commune",
+               h4("Veuillez sélectionner un département, puis la commune désirée."),
+               selectInput("DEP", "Sélection du département", 
+                           choices =  sort(unique(as.character(Donnees_communes$LIBDEP)))     
+                          ),
+               selectInput("COM", "Sélection de la commune", 
+                           choices =  sort(unique(as.character(Donnees_communes$LIBGEO)))
+                              
+                          )
+               )
+    )
+), 
+
+ server = function(input, output) {
+    output$evolution <- renderPlot({
+      ggplot(X18_25_non_insere, aes(YEAR, PART)) +
+        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"), color="purple",stat="identity") +
+        geom_line(data=subset(X18_25_non_insere,LIBGEO=="IDF"), color="blue",stat="identity") +
+        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"), color="yellow",stat="identity") +
+        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"),stat="identity") +
+        geom_point(data=subset(X18_25_non_insere,LIBGEO=="IDF"))+
+        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"))+
+        labs(x = "", y = "Part des 18-25 ans non insérés")
+    })
+    output$presentation_commune <- renderText({paste("Nombre d'habitants: 7 0300 (2017)")    })
+    output$barplot <- renderPlot({
+      ggplot(trying, mapping = aes(x=YEAR, y=PART, fill=LIBGEO)) +
+        geom_bar(stat="identity", position = "dodge") +
+        scale_fill_viridis(discrete=TRUE, name="")+
+        theme_ipsum()+
+        labs(x = "Année",y = "Part des 18-25 ans non insérés")
+    })
+  }
+)
+
+
+
+
+
+
+
+
+ box(
+             title = "Vaujours",
+             h5("La commune de ")
+             ),
+             box(
+             title = "ODD8: Taux des 18-25 ans non insérés",
+             footer = "Explication de l'indicateur",
+             status = "info",
+             solidHeader = TRUE,
+             width = 18,
+             plotOutput("barplot")
+             ),
+             box(
+             title = "ODD8: Taux des 18-25 ans non insérés",
+             footer = "Explication de l'indicateur",
+             status = "info",
+             solidHeader = TRUE,
+             width = 18,
+             plotOutput("evolution")
+             ),
+             infoBox(
+             title = "Evolution ODD1",
+             value = "en %",
+             subtitle = "Entre 2006 et 2016",
+             icon = icon("line-chart"),
+             fill = TRUE,
+             color = "light-blue",
+             width = 4
+             ),
+             valueBox(
+             value = "+ 38%",
+             subtitle = "Evolution sur 5 ans",
+             color = "green",
+             width = 4
+             ),
+             tabBox(
+             title = "Informations",
+             width = 4,
+             tabPanel(title = "Prix médian", "contenu 1"),
+             tabPanel(title = "Nombre", "contenu 2")
+             )
+             )
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Lecture des données--------------------
 #read.csv() #A remplir plus tard avec la base de données finalisée
