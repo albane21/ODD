@@ -41,12 +41,21 @@ juste vers un développement durable d'ici à 2030.")),
       tabPanel("Choix de la commune",
                h4("Veuillez sélectionner un département, puis la commune désirée."),
                selectInput("DEP", "Sélection du département", 
-                           choices =  sort(unique(as.character(Donnees_communes$LIBDEP)))     
+                           choices =  sort(unique(as.character(Description_communes$LIBDEP)))     
                           ),
                selectInput("COM", "Sélection de la commune", 
-                           choices =  sort(unique(as.character(Donnees_communes$LIBGEO)))
+                           choices =  sort(unique(as.character(Description_communes$LIBGEO)))
                               
-                          )
+                          ),
+                 selectInput("ODD", "Sélection de l'objectif de développement durable", 
+                           choices =  unique(as.character(Donnees_communes$LIBODD))     
+                          ),
+               mainPanel(
+                  textOutput("ExplicationODD")
+               ),
+               mainPanel(
+                   plotOutput(outputId = "plot", height = "500px", width="500px")
+               )
                )
     )
 ), 
@@ -70,6 +79,18 @@ juste vers un développement durable d'ici à 2030.")),
         theme_ipsum()+
         labs(x = "Année",y = "Part des 18-25 ans non insérés")
     })
+     
+     filtered_data<- reactive({
+  dplyr::filter(Description_communes, Description_communes$LIBGEO==input$COM)
+})
+   output$plot <- renderPlot({
+      par(mar=c(1,1,1,1))
+     
+      plot(x= filtered_data()$baseline_spin, y= filtered_data()$Difference.Error, type="p", xlim=c(1400,2000), ylim=c(.00,.8), xlab="Rate", ylab="Difference error")
+   })
+     
+      output$ExplicationODD <- renderText({paste("Voici le positionnement de la commune", input$COM, "en ce qui concerne l'", input$ODD)})
+     
   }
 )
 
