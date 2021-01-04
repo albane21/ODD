@@ -11,6 +11,9 @@ library(shinyBS)
 
 trying = X18_25_non_insere[X18_25_non_insere$LIBGEO =="IDF"| X18_25_non_insere$LIBGEO=="Groupe 1"|X18_25_non_insere$LIBGEO=="Vaujours",]
 
+
+########### Version 1 
+
 shinyApp(  
 ui = tagList(
     navbarPage(
@@ -51,17 +54,16 @@ juste vers un développement durable d'ici à 2030.")),
                            choices =  unique(as.character(Donnees_communes$LIBODD))     
                           ),
                mainPanel(
-                  textOutput("ExplicationODD")
-               ),
-               mainPanel(
+                   textOutput("ExplicationODD"),
                    plotOutput(outputId = "plot", height = "500px", width="500px")
-               )
+               ),
                )
     )
 ), 
 
  server = function(input, output) {
-    output$evolution <- renderPlot({
+    output$evolution <- 
+     renderPlot({
       ggplot(X18_25_non_insere, aes(YEAR, PART)) +
         geom_line(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"), color="purple",stat="identity") +
         geom_line(data=subset(X18_25_non_insere,LIBGEO=="IDF"), color="blue",stat="identity") +
@@ -70,34 +72,47 @@ juste vers un développement durable d'ici à 2030.")),
         geom_point(data=subset(X18_25_non_insere,LIBGEO=="IDF"))+
         geom_point(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"))+
         labs(x = "", y = "Part des 18-25 ans non insérés")
-    })
-    output$presentation_commune <- renderText({paste("Nombre d'habitants: 7 0300 (2017)")    })
-    output$barplot <- renderPlot({
+     })
+     
+    output$barplot <- 
+     renderPlot({
       ggplot(trying, mapping = aes(x=YEAR, y=PART, fill=LIBGEO)) +
         geom_bar(stat="identity", position = "dodge") +
         scale_fill_viridis(discrete=TRUE, name="")+
         theme_ipsum()+
         labs(x = "Année",y = "Part des 18-25 ans non insérés")
     })
+  
+   output$ExplicationODD <- 
+     renderText({paste("Voici le positionnement de la commune", input$COM, "en ce qui concerne l'", input$ODD)
+    })
      
-     filtered_data<- reactive({
-  dplyr::filter(Description_communes, Description_communes$LIBGEO==input$COM)
-})
-   output$plot <- renderPlot({
-      par(mar=c(1,1,1,1))
-     
-      plot(x= filtered_data()$baseline_spin, y= filtered_data()$Difference.Error, type="p", xlim=c(1400,2000), ylim=c(.00,.8), xlab="Rate", ylab="Difference error")
+    filtered_data <- 
+     reactive({dplyr::filter(Description_communes, Description_communes$LIBGEO==input$COM)
    })
+    ##Changer les variables après avoir fait la base de données correspondante
+    output$plot <- renderPlot({    
+    plot(x= filtered_data()$POP17, y= filtered_data()$MED17, type="p", xlab="Population en 2017", ylab="Médiane en 2017")
+  })
      
-      output$ExplicationODD <- renderText({paste("Voici le positionnement de la commune", input$COM, "en ce qui concerne l'", input$ODD)})
      
-  }
+ }
 )
 
 
 
+  ########### Version 2 : dashboard
 
 
+     output$plot <- renderPlot({
+       ggplot(Description_communes, mapping = aes(x=filtered_data()$POP17, y=filtered_data()$MED17, fill=LIBGEO)) +
+        geom_bar(stat="identity", position = "dodge") +
+        scale_fill_viridis(discrete=TRUE, name="")+
+        theme_ipsum()+
+        labs(x = "Population en 2017", y = "Médiane en 2017")
+    })
+ 
+    
 
 
 
