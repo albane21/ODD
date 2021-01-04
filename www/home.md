@@ -1,8 +1,5 @@
-## VAUJOURS
+## Présentation de l'Observatoire des Objectifs de Développement Durable pour le territoire d'Ile-de-France
 <br><br>
-Commune située dans le département de la Seine-Saint-Denis (93).\
-Densité:    
-Habitants: 7 030 (2017)  
-Revenu médian:  
+L'objectif de cet observatoire est de présenter l'évolution dans le temps de différents indicateurs au niveau communal.
 
 <br><br><br>
