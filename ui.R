@@ -36,13 +36,13 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
     dashboardSidebar(
             width = 200,
       sidebarMenu(
-        menuItem("Présentation de l'observatoire", tabName = "home"),
+        menuItem("Présentation de l'observatoire", tabName = "obs"),
         menuItem("Communes", tabName = "commune_choice", icon = icon("list-ol")),
         div( id = 'sidebar_cr',
              conditionalPanel("input.sidebar === 'commune_choice'",
                                selectizeInput("Liste_Communes",
                                               "Choix de la commune", 
-                                              choices =  X18_25_non_insere$LIBGEO, 
+                                              choices =  Donnees_communes$LIBDEP, 
                                              selected = NULL,  width = "200px",
                                               multiple = T), #,
                               actionButton('btn_build_country_report', 
@@ -68,15 +68,19 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
 
  body <-       
  dashboardBody(
+     
              tabItems(
+                 
+                 tabItem(tabName = "obs",
+                h2("Présentation de l'observatoire des Objectifs de Développement Durable pour le territoire d'Ile-de-France"), 
+                h5(" L'objectif de cet observatoire est de présenter l'évolution dans le temps de différents indicateurs au niveau communal.")
+                        ),
+    
              tabItem(
              "commune_choice",
              box(
              title = "Vaujours",
-             footer = textOutput("présentation_commune"),
-             status = "info",
-             solidHeader = TRUE,
-             width = 18
+             h5("La commune de ")
              ),
              box(
              title = "ODD8: Taux des 18-25 ans non insérés",
@@ -116,17 +120,7 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
              tabPanel(title = "Nombre", "contenu 2")
              )
              ),
-                
-              tabItem(
-             "home",
-             box(
-             title = "Présentation de l'observatoire",
-             footer = textOutput("présentation_commune"),
-             status = "info",
-             solidHeader = TRUE,
-             width = 18
-             )
-             )          
+                        
              ),
              skin = "red"
              )
@@ -135,5 +129,5 @@ header$children[[2]]$children[[1]] <- tags$a(href='http://www.driee.ile-de-franc
 ui <- 
    dashboardPage(header , siderbar , body )
 
-##Ouvrir l'application
+##Ouvrir application
 shinyApp(ui, server)
