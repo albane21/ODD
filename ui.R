@@ -44,10 +44,10 @@ juste vers un développement durable d'ici à 2030.")),
       tabPanel("Choix de la commune",
                h4("Veuillez sélectionner un département, puis la commune désirée."),
                selectInput("DEP", "Sélection du département", 
-                           choices =  sort(unique(as.character(Description_communes$LIBDEP)))     
+                           choices =  sort(unique(as.character(Donnees_indicateurs$LIBDEP)))     
                           ),
                selectInput("COM", "Sélection de la commune", 
-                           choices =  sort(unique(as.character(Description_communes$LIBGEO)))
+                           choices =  sort(unique(as.character(Donnees_indicateurs$LIBGEO)))
                               
                           ),
                  selectInput("ODD", "Sélection de l'objectif de développement durable", 
@@ -62,16 +62,17 @@ juste vers un développement durable d'ici à 2030.")),
 ), 
 
  server = function(input, output) {
-    output$evolution <- 
+   
+     output$plot <- 
      renderPlot({
-      ggplot(X18_25_non_insere, aes(YEAR, PART)) +
-        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"), color="purple",stat="identity") +
-        geom_line(data=subset(X18_25_non_insere,LIBGEO=="IDF"), color="blue",stat="identity") +
-        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"), color="yellow",stat="identity") +
-        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"),stat="identity") +
-        geom_point(data=subset(X18_25_non_insere,LIBGEO=="IDF"))+
-        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"))+
-        labs(x = "", y = "Part des 18-25 ans non insérés")
+      ggplot(filtered_data(), aes(ANNEE, VALEUR)) +
+        geom_line(data=subset(filtered_data(),LIBGEO==input$COM), color="purple",stat="identity") +
+        geom_line(data=subset(filtered_data(),LIBGEO=="IDF"), color="blue",stat="identity") +
+        geom_line(data=subset(filtered_data(),LIBGEO=="Groupe 1"), color="yellow",stat="identity") +
+        geom_point(data=subset(filtered_data(),LIBGEO=="Groupe 1"),stat="identity") +
+        geom_point(data=subset(filtered_data(),LIBGEO=="IDF"))+
+        geom_point(data=subset(filtered_data(),LIBGEO==input$COM))+
+        labs(x = "Année", y = "Valeur")
      })
      
     output$barplot <- 
@@ -88,29 +89,42 @@ juste vers un développement durable d'ici à 2030.")),
     })
      
     filtered_data <- 
-     reactive({dplyr::filter(Description_communes, Description_communes$LIBGEO==input$COM)
+     reactive({dplyr::filter(Donnees_indicateurs, Donnees_indicateurs$LIBGEO==input$COM, Donnees_indicateurs$ODD==input$ODD)
    })
-    ##Changer les variables après avoir fait la base de données correspondante
-    output$plot <- renderPlot({    
-    plot(x= filtered_data()$POP17, y= filtered_data()$MED17, type="p", xlab="Population en 2017", ylab="Médiane en 2017")
-  })
+       
+      
      
      
  }
 )
 
+ output$plot <- renderPlot({
+       ggplot(filtered_data(), mapping = aes(x=filtered_data()$ANNEE, y=filtered_data()$VALEUR, fill=LIBGEO)) +
+        geom_bar(stat="identity", position = "dodge") +
+        scale_fill_viridis(discrete=TRUE, name="")+
+        theme_ipsum()+
+        labs(x = "Année", y = "Valeur")
+    })
 
+ plot(x= filtered_data()$ANNEE, y= range(filtered_data()$VALEUR, na.rm=TRUE), type="p", xlab="Année", ylab="Part de la population pauvre")
+  })
+
+ output$evolution <- 
+     renderPlot({
+      ggplot(X18_25_non_insere, aes(YEAR, PART)) +
+        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"), color="purple",stat="identity") +
+        geom_line(data=subset(X18_25_non_insere,LIBGEO=="IDF"), color="blue",stat="identity") +
+        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"), color="yellow",stat="identity") +
+        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"),stat="identity") +
+        geom_point(data=subset(X18_25_non_insere,LIBGEO=="IDF"))+
+        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"))+
+        labs(x = "", y = "Part des 18-25 ans non insérés")
+     })
 
   ########### Version 2 : dashboard
 
 
-     output$plot <- renderPlot({
-       ggplot(Description_communes, mapping = aes(x=filtered_data()$POP17, y=filtered_data()$MED17, fill=LIBGEO)) +
-        geom_bar(stat="identity", position = "dodge") +
-        scale_fill_viridis(discrete=TRUE, name="")+
-        theme_ipsum()+
-        labs(x = "Population en 2017", y = "Médiane en 2017")
-    })
+     
  
     
 
