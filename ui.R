@@ -9,8 +9,6 @@ library(hrbrthemes)
 library(viridis)
 library(shinyBS)
 
-trying = X18_25_non_insere[X18_25_non_insere$LIBGEO =="IDF"| X18_25_non_insere$LIBGEO=="Groupe 1"|X18_25_non_insere$LIBGEO=="Vaujours",]
-
 
 ########### Version 1 
 
@@ -19,27 +17,41 @@ ui = tagList(
     navbarPage(
       theme = "cerulean",  # <--- To use a theme, uncomment this
       "Observatoire des ODD IDF",
-      tabPanel(id="test","Présentation de l'observatoire",
-               bsTooltip("test", title="Test Title", trigger = "hover"),
+      tabPanel("Présentation de l'observatoire",
                mainPanel(
                  tabsetPanel(
                    tabPanel("Objectif",
-                            div(id = "my_id",                       #changed
                                 h5(" L'objectif de cet observatoire est de présenter l'évolution dans le temps de différents indicateurs au niveau communal.")
-                            ),                                      # changed
-                            bsTooltip('my_id','some text...')       # changed
-                   ),
+                            ),                                
                    tabPanel("Présentation des ODD",
                             h5("Les 17 Objectifs de Développement Durable (ODD ou Agenda 2030) ont été adoptés en septembre 2015 par 193 pays aux Nations Unies, 
 à la suite des Objectifs du Millénaire pour le Développement (OMD). Ils constituent un plan d’action pour la paix, l’humanité, la planète et la prospérité, 
 nécessitant la mise en oeuvre de partenariats multi-acteurs. Ils ambitionnent de transformer nos sociétés en éradiquant la pauvreté et en assurant une transition 
 juste vers un développement durable d'ici à 2030.")),
                    tabPanel("Données utilisées", 
-                           h5("La géographie utilisée pour les indicateurs communaux est celle du 1er janvier 2020. Celle-ci est disponible à l'adresse suivante: https://www.insee.fr/fr/information/2028028"))
-                 )
-               )
-      ),
-      tabPanel("Choix de l'objectif de développement durable"),
+                           h5("La géographie utilisée pour les indicateurs communaux est celle du 1er janvier 2020. Celle-ci est disponible à l'adresse suivante: https://www.insee.fr/fr/information/2028028")
+                           ),
+                   tabPanel("Explication des groupes de communes", 
+                            h5("L'objectif de cet observatoire est d'élaborer un outil qui permet de situer la situation de sa commune, par rapport à la situation de communes semblables."),
+                            h5("Nous avons donc créé des groupes rassemblants les communes similaires de le région Ile-de-France, en utilisant les critères suivants:"),
+                            h5("-Le nombre d'habitants de la commune"),
+                            h5("-Le revenu médian des ménages de la commune"),
+                            h5("-Le potentiel fiscal de la commune")
+                            )
+                     )
+                   )
+               ),
+
+      tabPanel("Choix de l'objectif de développement durable",
+               h4("Veuillez sélectionner un objectif de développement durable, puis l'indicateur que souhaitez observer."),
+               selectInput("ODD1", "Sélection de l'objectif de développement durable", 
+                           choices =  unique(as.character(Description_indicateurs$ODD))     
+                          ),
+               selectInput("INDICATEUR", "Sélection de l'indicateur", 
+                           choices =  sort(unique(as.character(Description_indicateurs$INDICLIB)))     
+                          )
+               ), 
+        
         
       tabPanel("Choix de la commune",
                h4("Veuillez sélectionner un département, puis la commune désirée."),
@@ -91,10 +103,12 @@ juste vers un développement durable d'ici à 2030.")),
     filtered_data <- 
      reactive({dplyr::filter(Donnees_indicateurs, Donnees_indicateurs$LIBGEO==input$COM, Donnees_indicateurs$ODD==input$ODD)
    })
+     
+    filtered_data_ODD_INDIC <-
+     reactive({dplyr::filter(Description_indicateurs, Description_indicateurs$ODD==input$ODD1)
+   })
        
-      
-     
-     
+
  }
 )
 
