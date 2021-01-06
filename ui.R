@@ -57,6 +57,13 @@ juste vers un développement durable d'ici à 2030.")),
              status = "info",
              solidHeader = TRUE,
              width = 18
+             ),
+               
+                box(
+             title = "Ajout de la cartographie",
+             status = "info",
+             solidHeader = TRUE,
+             width = 18
              )
                
                
@@ -93,11 +100,11 @@ juste vers un développement durable d'ici à 2030.")),
 
  server = function(input, output) {
      
-     YearsData <- Donnees_indicateurs %>% gather(type,Year,
-                                      Y2017, Y2016)
+  #   YearsData <- Donnees_indicateurs %>% gather(type,Year,
+  #                                    Y2017, Y2016)
 
-    ggplot(plotData,aes(x=Gene.Symbol,y=Normalised.count,color=type) + 
-       geom_line()    ## For a line plot 
+  #  ggplot(plotData,aes(x=Gene.Symbol,y=Normalised.count,color=type) + 
+  #     geom_line()    ## For a line plot 
    
      output$plot <- 
      renderPlot({
