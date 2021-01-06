@@ -8,6 +8,7 @@ library(tidyverse)
 library(hrbrthemes)
 library(viridis)
 library(shinyBS)
+library(tidyr)
 
 
 ########### Version 1 
@@ -49,7 +50,16 @@ juste vers un développement durable d'ici à 2030.")),
                           ),
                selectInput("INDICATEUR", "Sélection de l'indicateur", 
                            choices =  sort(unique(as.character(Description_indicateurs$INDICLIB)))     
-                          )
+                          ),
+                box(
+             title = textOutput("description_indicateur"),
+             textOutput("description_indicateur1"),
+             status = "info",
+             solidHeader = TRUE,
+             width = 18
+             )
+               
+               
                ), 
         
         
@@ -63,17 +73,31 @@ juste vers un développement durable d'ici à 2030.")),
                               
                           ),
                  selectInput("ODD", "Sélection de l'objectif de développement durable", 
-                           choices =  unique(as.character(Donnees_communes$LIBODD))     
+                           choices =  unique(as.character(Donnees_indicateurs$ODD))     
                           ),
                mainPanel(
-                   textOutput("ExplicationODD"),
-                   plotOutput(outputId = "plot", height = "500px", width="500px")
-               ),
+                   box(
+                       title = textOutput("Titre_ODD"),
+                       textOutput("ExplicationODD"),
+                       textOutput("filtered_data_DEP_COM()"),
+                       plotOutput(outputId = "plot", height = "500px", width="500px")
+
+                       )
+                   
+                   
+               )
+              
                )
     )
 ), 
 
  server = function(input, output) {
+     
+     YearsData <- Donnees_indicateurs %>% gather(type,Year,
+                                      Y2017, Y2016)
+
+    ggplot(plotData,aes(x=Gene.Symbol,y=Normalised.count,color=type) + 
+       geom_line()    ## For a line plot 
    
      output$plot <- 
      renderPlot({
@@ -107,7 +131,30 @@ juste vers un développement durable d'ici à 2030.")),
     filtered_data_ODD_INDIC <-
      reactive({dplyr::filter(Description_indicateurs, Description_indicateurs$ODD==input$ODD1)
    })
-       
+     
+     output$description_indicateur <-
+       renderText({input$INDICATEUR
+    })
+     
+    output$Titre_ODD <-
+       renderText({paste(input$COM, ":", input$ODD)
+    })
+     
+     filtered_data_1 <- 
+     reactive({dplyr::filter(Description_indicateurs, Description_indicateurs$INDICLIB
+==input$INDICATEUR)
+   })
+     
+      output$description_indicateur1 <-
+       renderText({filtered_data_1()$INDICDESC
+    })
+     
+ ## Not working : filtrer le nom des communes selon le département sélectionné dans le menu déroulant    
+     
+ #   filtered_data_DEP_COM <- 
+ #    reactive({dplyr::filter(Donnees_indicateurs, Donnees_indicateurs$LIBDEP==input$DEP)
+ #  }) 
+     
 
  }
 )
