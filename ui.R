@@ -9,7 +9,7 @@ library(hrbrthemes)
 library(viridis)
 library(shinyBS)
 library(tidyr)
-
+library(hrbrthemes)
 
 ########### Version 1 
 
@@ -83,11 +83,15 @@ juste vers un développement durable d'ici à 2030.")),
                            choices =  unique(as.character(Donnees_indicateurs$ODD))     
                           ),
                mainPanel(
+                    sidebarLayout(position = "right",
+                sidebarPanel("Explication de l'indicateur"),
+                mainPanel(textOutput("Presentation_commune"))
+  ),
                    box(
                        title = textOutput("Titre_ODD"),
                        textOutput("ExplicationODD"),
                        textOutput("filtered_data_DEP_COM()"),
-                       plotOutput(outputId = "plot", height = "500px", width="500px")
+                       plotOutput(outputId = "barplot", height = "500px", width="500px")
 
                        )
                    
@@ -105,27 +109,23 @@ juste vers un développement durable d'ici à 2030.")),
 
   #  ggplot(plotData,aes(x=Gene.Symbol,y=Normalised.count,color=type) + 
   #     geom_line()    ## For a line plot 
-   
+  
+     
+     ### Le graph doit contenir la valeur pour la commune, le groupe et IDF. 
+# Ici, filtered_data() conserve uniquement la donnée de la commune sélectionnée : c'est pour cela qu'une seule colonne apparait par an 
+     ##### Trouver un moyen de créer une base regroupant la commune sélectionnée, le groupe auquel elle appartient et IDF 
      output$plot <- 
      renderPlot({
       ggplot(filtered_data(), aes(ANNEE, VALEUR)) +
         geom_line(data=subset(filtered_data(),LIBGEO==input$COM), color="purple",stat="identity") +
-        geom_line(data=subset(filtered_data(),LIBGEO=="IDF"), color="blue",stat="identity") +
-        geom_line(data=subset(filtered_data(),LIBGEO=="Groupe 1"), color="yellow",stat="identity") +
-        geom_point(data=subset(filtered_data(),LIBGEO=="Groupe 1"),stat="identity") +
+        geom_line(data=subset(filtered_data(),LIBGEO=="IDF"), color="red",stat="identity") +
+        geom_line(data=subset(filtered_data(),LIBGEO=="1"), color="green",stat="identity") +
+        geom_point(data=subset(filtered_data(),LIBGEO=="1"),stat="identity") +
         geom_point(data=subset(filtered_data(),LIBGEO=="IDF"))+
         geom_point(data=subset(filtered_data(),LIBGEO==input$COM))+
         labs(x = "Année", y = "Valeur")
      })
-     
-    output$barplot <- 
-     renderPlot({
-      ggplot(trying, mapping = aes(x=YEAR, y=PART, fill=LIBGEO)) +
-        geom_bar(stat="identity", position = "dodge") +
-        scale_fill_viridis(discrete=TRUE, name="")+
-        theme_ipsum()+
-        labs(x = "Année",y = "Part des 18-25 ans non insérés")
-    })
+    
   
    output$ExplicationODD <- 
      renderText({paste("Voici le positionnement de la commune", input$COM, "en ce qui concerne l'", input$ODD)
@@ -156,11 +156,25 @@ juste vers un développement durable d'ici à 2030.")),
        renderText({filtered_data_1()$INDICDESC
     })
      
+     output$Presentation_commune <-
+        renderText({paste("Présentation de", input$COM, ", commune du département", input$DEP)
+                  })
+     
  ## Not working : filtrer le nom des communes selon le département sélectionné dans le menu déroulant    
      
  #   filtered_data_DEP_COM <- 
  #    reactive({dplyr::filter(Donnees_indicateurs, Donnees_indicateurs$LIBDEP==input$DEP)
  #  }) 
+     
+### Le graph doit contenir la valeur pour la commune, le groupe et IDF. 
+# Ici, filtered_data() conserve uniquement la donnée de la commune sélectionnée : c'est pour cela qu'une seule colonne apparait par an 
+     output$barplot <- renderPlot({
+      ggplot(filtered_data(), mapping = aes(x=ANNEE, y=VALEUR, fill=LIBGEO)) +
+        geom_bar(stat="identity", position = "dodge") +
+        scale_fill_viridis(discrete=TRUE, name="")+
+        theme_ipsum()+
+        labs(x = "Année",y = "Part des 18-25 ans non insérés")
+    })
      
 
  }
