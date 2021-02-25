@@ -1,22 +1,64 @@
+##--------------Chargement des packages------------------
 
 library(shiny)
-library(shinydashboard)
-library(ggplot2)
 library(dplyr)
-library(markdown)
+library(here)
 library(tidyverse)
+library(shinydashboard)
+library(leaflet)
+library(sf)
+library(shinycustomloader)
+library(RColorBrewer)
+library(ggplot2)
+library(markdown)
 library(hrbrthemes)
 library(viridis)
 library(shinyBS)
 library(tidyr)
-library(hrbrthemes)
+library(ggthemes)
 
-########### Version 1 
+# définition de l'habillage carto
 
-shinyApp(  
-ui = tagList(
+url_tile = "https://wxs.ign.fr/{apikey}/geoportail/wmts?&REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/jpeg&LAYER={layer}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}"
+opt_tile <- providerTileOptions(
+  apikey= 'pratique', # choisirgeoportail pratique
+  layer= 'ORTHOIMAGERY.ORTHOPHOTOS', # GEOGRAPHICALGRIDSYSTEMS.MAPS ORTHOIMAGERY.ORTHOPHOTOS /  GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2
+  minZoom = 0,
+  maxZoom = 18,
+  attribution = "IGN-F/Geoportail",
+  tileSize = 256) # les tuiles du Géooportail font 256x256px
+
+## Chargement des données ------
+# -----------------------------AVEC PARIS -----------------------------------------------------------------
+com2020_geom4326<- sf::read_sf(dsn ="./data/l_commune_epci_ept_bdt_s_r11_2020_geom4326.gpkg")
+bdd_odd_paris <- read.csv(file = "./data/BDD_ODD_Paris.csv",sep=";",dec=",",fileEncoding = "UTF-8")
+bdd_odd_paris_niveau <- read.csv(file = "./data/BDD_ODD_Paris_niveau.csv",sep=";",dec=",",fileEncoding = "UTF-8")
+
+#conversion en caractere le champ de jointure
+bdd_odd_paris<- mutate(bdd_odd_paris,codgeo = as.character(codgeo))
+
+#apppariement des données attributaires avec les objets géographiques
+odd_geom4326<-com2020_geom4326%>%inner_join(bdd_odd_paris,by=c("code_insee"="codgeo"))
+
+#--------------------------- AVEC ARRONDISSEMENT----------------------------------------------------------
+bdd_odd_arrdt<- read.csv(file = "./data/BDD_ODD_Arrondissements.csv",sep=";",dec=",",fileEncoding = "UTF-8")
+com2020_arrdt_geom4326<- sf::read_sf(dsn ="./data/l_commune_arrdt_epci_ept_bdt_s_r11_2020_geom4326.gpkg")
+bdd_odd_arrdt_niveau <- read.csv(file = "./data/BDD_ODD_arrdt_niveau.csv",sep=";",dec=",",fileEncoding = "UTF-8")
+
+#conversion en caractere le champ de jointure
+bdd_odd_arrdt<- mutate(bdd_odd_arrdt,codgeo = as.character(codgeo))
+#apppariement des données attributaires avec les objets géographiques
+odd_arrdt_geom4326<-com2020_arrdt_geom4326%>%inner_join(bdd_odd_arrdt,by=c("code_insee"="codgeo"))
+
+# ----------------------------HABILLAGE-----------------------------------------------------------------------
+dep_geom4326<- sf::read_sf(dsn ="./data/l_dep_bdt_s_r11_geom4326.gpkg")
+
+
+
+#+++++++++++++++++++ Define UI for application that draws a histogram++++++++++++++++++++++++++++++++++++++++++
+ui <- tagList(
     navbarPage(
-      theme = "cerulean",  # <--- To use a theme, uncomment this
+      theme = "cerulean", 
       "Observatoire des ODD IDF",
       tabPanel("Présentation de l'observatoire",
                mainPanel(
@@ -42,170 +84,420 @@ juste vers un développement durable d'ici à 2030.")),
                      )
                    )
                ),
-
-      tabPanel("Choix de l'objectif de développement durable",
+        
+        tabPanel("Choix de l'objectif de développement durable",
                h4("Veuillez sélectionner un objectif de développement durable, puis l'indicateur que souhaitez observer."),
-               selectInput("ODD1", "Sélection de l'objectif de développement durable", 
-                           choices =  unique(as.character(Description_indicateurs$ODD))     
-                          ),
-               selectInput("INDICATEUR", "Sélection de l'indicateur", 
-                           choices =  sort(unique(as.character(Description_indicateurs$INDICLIB)))     
-                          ),
+          checkboxInput("arrdt", "Choix indicateurs avec données arrondissements", FALSE),
+         #selectInput("ind","SELECTIONNER UN INDICATEUR",choices=setNames(c(colnames(odd_geom4326)[6:41]),c('Logement suroccupé en 2017','Logement suroccupé en 2016','licenciés sportifs en 2016','Non diplomé en 2017','Non diplomé en 2012','Non diplomé en 2007',colnames(odd_geom4326)[12:41]))),
+          #selectInput("ind1","SELECTIONNER UN INDICATEUR",choices=setNames(bdd_odd_paris_niveau$indic,
+                                                                   #paste("ODD -",bdd_odd_paris_niveau$indic,seq="")),selected = 'ODD - 1.2'),
+          
+          selectInput("ind1","Sélection de l'indicateur",choices=""),
+          selectInput("ind","Sélection de la sous-catégorie ",choices=""),
+          #selectInput("ind","SELECTIONNER LA ndic<-(reactive",choices=""),
+           verbatimTextOutput('name'),
+            verbatimTextOutput('source'),
+
+        # Show a plot of the generated distribution
+          actionButton("reg", "Revenir à la région", icon = icon("search-minus")),
+           withLoader(leafletOutput("carto", height = "500px"),
+                      type="html",
+                       loader="loader1"),
+          #tableOutput('tableau')
+                 
                 box(
              title = textOutput("description_indicateur"),
              textOutput("description_indicateur1"),
              status = "info",
              solidHeader = TRUE,
              width = 18
-             ),
-               
-                box(
-             title = "Ajout de la cartographie",
-             status = "info",
-             solidHeader = TRUE,
-             width = 18
-             )
-               
-               
-               ), 
+             ) 
+            
+        ),
         
-        
-      tabPanel("Choix de la commune",
+         tabPanel("Choix de la commune",
                h4("Veuillez sélectionner un département, puis la commune désirée."),
                selectInput("DEP", "Sélection du département", 
-                           choices =  sort(unique(as.character(Donnees_indicateurs$LIBDEP)))     
+                           choices =  sort(unique(as.character(bdd_graph$libdep)))     
                           ),
-               selectInput("COM", "Sélection de la commune", 
-                           choices =  sort(unique(as.character(Donnees_indicateurs$LIBGEO)))
-                              
+               selectInput("COM", "Sélection de la commune",  choices = ""
                           ),
-                 selectInput("ODD", "Sélection de l'objectif de développement durable", 
-                           choices =  unique(as.character(Donnees_indicateurs$ODD))     
+                 selectInput("ODD", "Sélection de l'objectif de développement durable", choices = sort(unique(as.character(bdd_graph$libodd))) 
                           ),
+                  selectInput("Indicateur", "Sélection de l'indicateur", choices = ""    
+                          ),
+                  
+                  mainPanel(
+      girafeOutput("trendPlot")
+    ),
                mainPanel(
                     sidebarLayout(position = "right",
                 sidebarPanel("Explication de l'indicateur"),
                 mainPanel(textOutput("Presentation_commune"))
-  ),
-                   box(
-                       title = textOutput("Titre_ODD"),
-                       textOutput("ExplicationODD"),
-                       textOutput("filtered_data_DEP_COM()"),
-                       plotOutput(outputId = "barplot", height = "500px", width="500px")
-
-                       )
+                                  )
+               )
                    
                    
                )
               
                )
     )
-), 
 
- server = function(input, output) {
-     
-  #   YearsData <- Donnees_indicateurs %>% gather(type,Year,
-  #                                    Y2017, Y2016)
-
-  #  ggplot(plotData,aes(x=Gene.Symbol,y=Normalised.count,color=type) + 
-  #     geom_line()    ## For a line plot 
-  
-     
-     ### Le graph doit contenir la valeur pour la commune, le groupe et IDF. 
-# Ici, filtered_data() conserve uniquement la donnée de la commune sélectionnée : c'est pour cela qu'une seule colonne apparait par an 
-     ##### Trouver un moyen de créer une base regroupant la commune sélectionnée, le groupe auquel elle appartient et IDF 
-     output$plot <- 
-     renderPlot({
-      ggplot(filtered_data(), aes(ANNEE, VALEUR)) +
-        geom_line(data=subset(filtered_data(),LIBGEO==input$COM), color="purple",stat="identity") +
-        geom_line(data=subset(filtered_data(),LIBGEO=="IDF"), color="red",stat="identity") +
-        geom_line(data=subset(filtered_data(),LIBGEO=="1"), color="green",stat="identity") +
-        geom_point(data=subset(filtered_data(),LIBGEO=="1"),stat="identity") +
-        geom_point(data=subset(filtered_data(),LIBGEO=="IDF"))+
-        geom_point(data=subset(filtered_data(),LIBGEO==input$COM))+
-        labs(x = "Année", y = "Valeur")
-     })
+#+++++++++++++++++++Define server logic required to draw a histogram++++++++++++++++++++++++++++++++++++++    
     
-  
-   output$ExplicationODD <- 
-     renderText({paste("Voici le positionnement de la commune", input$COM, "en ce qui concerne l'", input$ODD)
-    })
-     
-    filtered_data <- 
-     reactive({dplyr::filter(Donnees_indicateurs, Donnees_indicateurs$LIBGEO==input$COM, Donnees_indicateurs$ODD==input$ODD)
-   })
-     
-    filtered_data_ODD_INDIC <-
-     reactive({dplyr::filter(Description_indicateurs, Description_indicateurs$ODD==input$ODD1)
-   })
-     
-     output$description_indicateur <-
-       renderText({input$INDICATEUR
-    })
-     
-    output$Titre_ODD <-
-       renderText({paste(input$COM, ":", input$ODD)
-    })
-     
-     filtered_data_1 <- 
-     reactive({dplyr::filter(Description_indicateurs, Description_indicateurs$INDICLIB
-==input$INDICATEUR)
-   })
-     
-      output$description_indicateur1 <-
-       renderText({filtered_data_1()$INDICDESC
-    })
-     
-     output$Presentation_commune <-
-        renderText({paste("Présentation de", input$COM, ", commune du département", input$DEP)
-                  })
-     
- ## Not working : filtrer le nom des communes selon le département sélectionné dans le menu déroulant    
-     
- #   filtered_data_DEP_COM <- 
- #    reactive({dplyr::filter(Donnees_indicateurs, Donnees_indicateurs$LIBDEP==input$DEP)
- #  }) 
-     
-### Le graph doit contenir la valeur pour la commune, le groupe et IDF. 
-# Ici, filtered_data() conserve uniquement la donnée de la commune sélectionnée : c'est pour cela qu'une seule colonne apparait par an 
-     output$barplot <- renderPlot({
-      ggplot(filtered_data(), mapping = aes(x=ANNEE, y=VALEUR, fill=LIBGEO)) +
-        geom_bar(stat="identity", position = "dodge") +
-        scale_fill_viridis(discrete=TRUE, name="")+
-        theme_ipsum()+
-        labs(x = "Année",y = "Part des 18-25 ans non insérés")
-    })
-     
+ server <- function(input, output,session) {
 
- }
+  indic<-reactive(input$ind)
+  
+
+  observeEvent(input$arrdt,{
+    updateSelectInput(session,"ind1",
+                      
+                      choices = if (input$arrdt ==FALSE )
+                      {
+                          bdd_odd_paris_niveau$indic
+                      }else{
+                        bdd_odd_arrdt_niveau$indic
+                      }
+  )
+    }) 
+  
+
+  observeEvent(input$ind1,{
+    updateSelectInput(session,"ind",
+                      
+                      choices = if (input$arrdt ==FALSE )
+                      {
+                        setNames(
+                          bdd_odd_paris_niveau$libvar[bdd_odd_paris_niveau$indic==input$ind1],
+                          bdd_odd_paris_niveau$libelle[bdd_odd_paris_niveau$indic==input$ind1])
+                      }else{
+                        setNames(
+                          bdd_odd_arrdt_niveau$libvar[bdd_odd_arrdt_niveau$indic==input$ind1],
+                          bdd_odd_arrdt_niveau$libelle[bdd_odd_arrdt_niveau$indic==input$ind1])
+                      }
+    )
+  }) 
+  
+  
+  
+  
+  #================================ nom du champ  ====================================
+  output$name <- renderText({
+    if (input$arrdt ==FALSE) 
+    { indic()
+    }else{
+      paste(indic(),"(avec arrondissements)",seq="")}
+    })
+
+ # output$value <- renderText({ input$arrdt })
+  
+#================================  sources  ==============================================
+output$source <- renderText({'source: BDTOPO® ©IGN 2020'})
+
+
+#================================     carto   ============================================= 
+output$carto <- renderLeaflet({
+
+  if (input$arrdt==FALSE)
+  {
+    #nom de la couche
+    var_odd_geom4326<-odd_geom4326
+    
+    #nom de la variable indicateur concernée en fonction de l'input$
+    data_geom4326 <-odd_geom4326%>%pull(indic())
+    
+    #données de l' indicateur concernée en fonction de l'input$ sans les valeurs 0 (ronds proportionnel) 
+    odd_geom4326_sans_0 <- filter(odd_geom4326, data_geom4326 != 0)
+    
+    #nom de la variable indicateur concernée en fonction de l'input$ sans les valeurs 0 (ronds proportionnel) 
+    data_geom4326_0 <-odd_geom4326_sans_0%>%pull(indic())
+    
+  }else{
+    
+    #nom de la couche
+    var_odd_geom4326<-odd_arrdt_geom4326
+    
+    #nom de la variable indicateur concernée en fonction de l'input$
+    data_geom4326 <-odd_arrdt_geom4326%>%pull(indic())
+    
+    #données de l' indicateur concernée en fonction de l'input$ sans les valeurs 0 (ronds proportionnel) 
+    odd_geom4326_sans_0 <- filter(odd_arrdt_geom4326, data_geom4326 != 0)
+    
+    #nom de la variable indicateur concernée en fonction de l'input$ sans les valeurs 0 (ronds proportionnel) 
+    data_geom4326_0 <-odd_geom4326_sans_0%>%pull(indic()) 
+    
+  }
+    
+
+
+ 
+  if ( str_sub(indic(),1,3)%in% c("log","log","nod","cho","spo","par","pau","id1", "GR1", "GR2", "GR3", "GR4")
+        
+        & input$reg>=0)
+    
+  { 
+
+  #---------------------------definition des couleurs ---------------------------
+   couleur<- case_when(
+     #PARIS
+      indic() %in% c("logsur17","logsur16") ~'Reds',
+      indic() == "partsport16" ~'Blues',
+      indic() %in% c("nodip17","nodip12","nodip07") ~'YlOrRd',
+      indic() %in% c("chom1524hf17","chom1524hf12","chom1524hf07") ~'RdBu',
+      indic() %in% c("chom1564hf17","chom1564hf12","chom1564hf07") ~'BrBG',
+      indic() %in% c("chom5564hf17","chom5564hf12","chom5564hf07") ~'PuOr',
+      indic() %in% c("sport014f16","sport1529f16","sport3059f16","sport60plusf16") ~'BuPu',     
+      indic() == "partsaless15" ~'Purples',
+      indic() %in% c("partvoit17","partvoit12","partvoit07") ~'PuRd',
+      indic() %in% c("parttec17 ","parttec12","parttec07") ~'Greens',
+      indic() %in% c("partaut17 ","partaut12","partaut07") ~'YlOrBr',
+      #ARRONDISSMENT   
+      str_sub(indic(),1,4)=='pauv' ~'YlOrBr',
+      str_sub(indic(),1,9)=='partsport' ~'Blues',
+      indic() %in% c("id17","id16","id15","id14") ~'PuRd',
+      indic() %in% c("GR1","GR2","GR3","GR4") ~'PuOr'
+         
+    )
+  
+  
+  #######################definition des bornes ################################################
+
+
+    
+   #PARIS  
+   if (indic() %in% c("logsur17","logsur16"))
+          {bins<-c(0,2,4,6,8,10,20,40)
+     }else if (indic() =="partsport16")
+        {bins<-c(5,10,15,20,25,30,35,40,45,100)   
+    }else if (indic()%in% c("nodip17","nodip12","nodip07"))
+        {bins<-c(0,5,10,15,20,25,35,50,100)   
+    }else if (indic()%in% c("chom1524hf17","chom1524hf12","chom1524hf07"))
+        {bins<-c(-100,-30,-20,-15,-10,-5,0,5,10,15,20,30,100) 
+    }else if (indic()%in% c("chom1564hf17","chom1564hf12","chom1564hf07"))
+        {bins<-c(-100,-5,-4,-3,-2,-1,0,1,2,3,4,5,100)    
+    }else if (indic()%in% c("chom5564hf17","chom5564hf12","chom5564hf07"))
+        {bins<-c(-100,-5,-4,-3,-2,-1,0,1,2,3,4,5,100)   
+    }else if (indic()%in% c("sport014f16","sport1529f16","sport3059f16","sport60plusf16"))
+        {bins<-c(0,20,25,30,35,40,45,50,55,60,100)
+    }else if (indic() =="partsaless15")
+        {bins<-c(0,1,2,3,4,5,6,7,8,9,10,20,100)
+    }else if (indic()%in% c("partvoit17","partvoit12","partvoit07"))
+        {bins<-c(0,50,55,60,65,70,75,80,85,90,100) 
+    }else if (indic()%in% c("parttec17","parttec12","parttec07"))
+        {bins<-c(0,2,4,6,8,10,12,14,16,18,20,30,100)  
+    }else if (indic()%in% c("partaut17","partaut12","partaut07"))
+        {bins<-c(0,2,4,6,8,10,12,14,16,18,20,30,100) 
+      #ARRONDISSMENT  
+    }else if (str_sub(indic(),1,4)=='pauv')                      
+    {bins<-c(0,5,10,15,20,25,30,35,40,45,50,100)  
+    }else if (str_sub(indic(),1,9)=='partsport')                      
+    {bins<-c(5,10,15,20,25,30,35,40,45,100)
+    }else if (indic() %in% c("id17","id16","id15","id14"))                      
+    {bins<-c(0,2,2.5,3,3.5,4,4.5,5,5.5,6,10)
+      }else if (indic() %in% c("GR1","GR2","GR3","GR4"))                      
+    {bins<-c(0,1.5,2.5,3.5,4.5,5.5)
+    }
+
+
+ 
+ # inverse la palette de couleur pour la catégorie chomage
+ if (str_sub(indic(),1,3)=="cho") 
+ { inv =TRUE
+ }else{inv=FALSE}
+ 
+
+ # definition de la palette de couleur
+pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
+    
+
+   
+  leaflet(var_odd_geom4326, options = leafletOptions(zoomControl = TRUE)) %>%
+      addTiles() %>%  #Add default OpenStreetMap map tiles
+     setView(lng = 2.342,lat = 48.756, zoom = 9.47) %>%
+    addMarkers(data = dep_geom4326,
+               lng=~x, lat=~y,
+               label = ~dep_geom4326$nom_dep,
+               options = markerOptions(opacity=0),
+               labelOptions = labelOptions(noHide = F, textOnly = TRUE,textsize = "10px",style = list(
+                 "color" = "black",
+                 "font-family" = "arial",
+                 "font-style" = "italic",
+                 "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
+                 "font-size" = "12px",
+                 "border-color" = "rgba(0,0,0,0.5)"
+               )))%>%   
+    addMarkers(data = var_odd_geom4326,
+               lng=~x, lat=~y,
+               label = paste(var_odd_geom4326$libgeo,": ",as.numeric(data_geom4326),seq=""),
+               options = markerOptions(opacity=0))%>%
+    addPolygons(data = var_odd_geom4326,
+                #lng=~x, lat=~y,
+                fillColor =~pal(as.numeric(data_geom4326)),
+                weight = 1,
+                  smoothFactor = 1,
+                  opacity = 0.5,
+                  color = "white",
+                  dashArray = "3",
+                 fillOpacity = 0.7)%>%
+    addPolygons(data = dep_geom4326,
+                weight = 1,
+                smoothFactor = 1,
+                opacity = 0.8,
+                color = "black",
+                dashArray = "3",
+                fillOpacity = 0)%>%
+      addLegend(pal = pal, values = ~as.numeric(data_geom4326), opacity = 0.7, title = NULL,
+          position = "bottomright")
+ 
+  
+}else{
+  
+  
+  
+  #######################definition des couleurs des cercles propotionnels ################################################
+  couleur_c<- case_when(
+    #PARIS
+    indic() == "empass15" ~rgb(187, 11, 11, maxColorValue = 255),#cerise,
+    indic() == "empcoop15" ~rgb(231, 62, 1, maxColorValue = 255), #corail approche le orange,
+    indic() == "empfond15" ~rgb(173, 79, 9, maxColorValue = 255), #jaune d'or
+    indic() == "empmut15" ~rgb(27, 79, 8, maxColorValue = 255), #vert foncé 
+    indic() == "ecoent16" ~'purple',
+    indic() == "ecoent11" ~'blue',
+    indic() == "ecoent06" ~'green',
+    #ARRONDISSMENT
+    indic() == "consonrj17" ~rgb(34, 66, 124, maxColorValue = 255),
+    indic() == "consonrj15" ~rgb(23, 101, 125, maxColorValue = 255),
+    indic() == "consonrj12" ~rgb(53, 122, 183, maxColorValue = 255),
+    indic() == "consonrj10" ~rgb(53, 151, 151, maxColorValue = 255),
+    indic() == "consonrj05" ~rgb(43, 151, 90, maxColorValue = 255)
+    
+    
+  )
+  
+  
+  taille_c<- case_when(
+    #PARIS
+    indic() == "empass15" ~'0.5',
+    indic()%in% c("empcoop15","empfond15","empmut15","ecoent16","ecoent11","ecoent06")  ~'1',
+    str_sub(indic(),1,8)=='consonrj'~'0.01'
 )
 
+  
+  
 
+  
+ 
+  
+  
 
+  
+  
+  
+  leaflet(odd_geom4326_sans_0, options = leafletOptions(zoomControl = FALSE)) %>%
+    addTiles() %>%  #Add default OpenStreetMap map tiles
+    setView(lng = 2.342,lat = 48.756, zoom = 9.47) %>%
+    addPolygons(data = odd_geom4326,
+                weight = 0.5,
+                smoothFactor = 1,
+                opacity = 0.8,
+                color = "black",
+                dashArray = "3",
+                fillOpacity = 0)%>%
+    addPolygons(data = dep_geom4326,
+                weight = 1,
+                smoothFactor = 1,
+                opacity = 0.8,
+                color = "black",
+                dashArray = "3",
+                fillOpacity = 0)%>%
+    addCircleMarkers(data = odd_geom4326_sans_0,
+            label = paste(odd_geom4326_sans_0$libgeo,": ",as.numeric(data_geom4326_0),seq=""),
+            lng=~x, lat=~y, 
+               weight = 2.5,
+            opacity = 1,
+               radius = ~sqrt(as.numeric(data_geom4326_0)/pi) * as.numeric(taille_c),
+               fillOpacity = 0.7,
+            fill = TRUE,
+            stroke=TRUE,
+               popup=~as.numeric(data_geom4326_0),
+               color=couleur_c
+                #color=rgb(255, 35, 0, maxColorValue = 255)
+            )
+              #%>%
+    #addLegend(pal = pal, values = ~as.numeric(var()), opacity = 0.7, title = NULL,
+              #position = "bottomright")
+ 
+  
+}
+  
+  
+  })   
+     
+ #====================================== Sélection indicateur graphiques =======================================
 
+  
+    observeEvent(input$DEP,{
+    updateSelectInput(session,"COM",
+                      
+                      choices = bdd_graph$libgeo[bdd_graph$libdep==input$DEP]
+  )
+    }) 
+     
+     observeEvent(input$ODD,{
+        updateSelectInput(session,"Indicateur",
+                      
+                      choices = bdd_graph$libelle_non_annees[bdd_graph$libodd==input$ODD]
+  )
+    }) 
+     
+ ##======================================== Graphique commune =====================================================   
+      
+     
+  filtered_data <- reactive({
+   bdd_graph_1 <- bdd_graph   
+   bdd_graph_1 <- filter(bdd_graph_1, libelle_non_annees==input$Indicateur)
+   bdd_graph_1 <- filter(bdd_graph_1, libgeo == input$COM)    
+  })   
+     
+     filtered_data_com <- reactive({
+   bdd_graph_2 <- bdd_graph   
+   bdd_graph_2 <- filter(bdd_graph_2, libelle_non_annees==input$Indicateur)
+  })   
+     
+  output$trendPlot <- renderGirafe({
+      graph_title  <- paste(input$COM, input$Indicateur,  sep=": ")
+      G = ggplot(filtered_data_com(), aes(x = annee, y = valeur)) +
+      geom_line(data=subset(filtered_data_com(),libgeo=="75056 Paris"), size= 2, alpha=0.8, color="purple",stat="identity") +
+      geom_line(data=subset(filtered_data_com(),libgeo==input$COM), size= 2, alpha=0.8, color="blue",stat="identity") +
+      geom_line(data=subset(filtered_data_com(),libgeo=="95690 Wy-dit-Joli-Village"), size= 2, alpha=0.8, color="yellow",stat="identity") +
+      geom_point(data=subset(filtered_data_com(),libgeo==input$COM),size = 3, alpha = 0.8, color="blue",stat="identity") +
+      geom_point(data=subset(filtered_data_com(),libgeo=="95690 Wy-dit-Joli-Village"),size = 3, alpha = 0.8, color="yellow",stat="identity") +
+      geom_point(data=subset(filtered_data_com(),libgeo=="75056 Paris"),size = 3, alpha = 0.8, color="purple",stat="identity") +
+      labs(x = "Année")+
+      labs(y = input$Indicateur)+
+      labs(title = graph_title)+
+      theme(legend.title = element_blank(), legend.position = "right", plot.title = element_text(size=10)) +
+      scale_x_continuous(breaks = 
+                             c(min(filtered_data()$annee, na.rm = TRUE):max(filtered_data()$annee, na.rm = TRUE)))##conserver uniquement les années sur l'axe x 
+            
+      G <- G + geom_point_interactive(data=subset(filtered_data_com(),libgeo=="75056 Paris"),aes(tooltip = valeur, data_id = libgeo), size = 2)
+      G <- G + geom_point_interactive(data=subset(filtered_data_com(),libgeo==input$COM),aes(tooltip = valeur, data_id = libgeo), size = 2)
+      G <- G + geom_point_interactive(data=subset(filtered_data_com(),libgeo=="95690 Wy-dit-Joli-Village"),aes(tooltip = valeur, data_id = libgeo), size = 2)
+      G <- G + theme(legend.position="right")
 
-
-#### Essais
-
- output$plot <- renderPlot({
-       ggplot(filtered_data(), mapping = aes(x=filtered_data()$ANNEE, y=filtered_data()$VALEUR, fill=LIBGEO)) +
-        geom_bar(stat="identity", position = "dodge") +
-        scale_fill_viridis(discrete=TRUE, name="")+
-        theme_ipsum()+
-        labs(x = "Année", y = "Valeur")
-    })
-
- plot(x= filtered_data()$ANNEE, y= range(filtered_data()$VALEUR, na.rm=TRUE), type="p", xlab="Année", ylab="Part de la population pauvre")
+      
+      
+    return(girafe(
+      code = print(G)))
+                                        
   })
+     
+    
+     
+    
 
- output$evolution <- 
-     renderPlot({
-      ggplot(X18_25_non_insere, aes(YEAR, PART)) +
-        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"), color="purple",stat="identity") +
-        geom_line(data=subset(X18_25_non_insere,LIBGEO=="IDF"), color="blue",stat="identity") +
-        geom_line(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"), color="yellow",stat="identity") +
-        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Groupe 1"),stat="identity") +
-        geom_point(data=subset(X18_25_non_insere,LIBGEO=="IDF"))+
-        geom_point(data=subset(X18_25_non_insere,LIBGEO=="Vaujours"))+
-        labs(x = "", y = "Part des 18-25 ans non insérés")
-     })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
