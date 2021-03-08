@@ -145,7 +145,7 @@ juste vers un développement durable d'ici à 2030.")),
 
 #+++++++++++++++++++Define server logic required to draw a histogram++++++++++++++++++++++++++++++++++++++    
     
- server <- function(input, output,session) {
+server <- function(input, output,session) {
 
   indic<-reactive(input$ind)
   
@@ -179,8 +179,7 @@ juste vers un développement durable d'ici à 2030.")),
     )
   }) 
   
-  
-  
+
   
   #================================ nom du champ  ====================================
   output$name <- renderText({
@@ -204,6 +203,9 @@ output$carto <- renderLeaflet({
     #nom de la couche
     var_odd_geom4326<-odd_geom4326
     
+    #libelle de l'indicateur pour PARIS
+    libelle<-bdd_odd_paris_niveau$libelle[bdd_odd_paris_niveau$libvar==indic()]
+    
     #nom de la variable indicateur concernée en fonction de l'input$
     data_geom4326 <-odd_geom4326%>%pull(indic())
     
@@ -213,10 +215,15 @@ output$carto <- renderLeaflet({
     #nom de la variable indicateur concernée en fonction de l'input$ sans les valeurs 0 (ronds proportionnel) 
     data_geom4326_0 <-odd_geom4326_sans_0%>%pull(indic())
     
+
+    
   }else{
     
     #nom de la couche
     var_odd_geom4326<-odd_arrdt_geom4326
+    
+    #libelle de l'indicateur pour l'arrondissement
+    libelle<-bdd_odd_arrdt_niveau$libelle[bdd_odd_arrdt_niveau$libvar==indic()]
     
     #nom de la variable indicateur concernée en fonction de l'input$
     data_geom4326 <-odd_arrdt_geom4326%>%pull(indic())
@@ -230,18 +237,18 @@ output$carto <- renderLeaflet({
   }
     
 
-
  
-  if ( str_sub(indic(),1,3)%in% c("log","log","nod","cho","spo","par","pau","id1", "GR1", "GR2", "GR3", "GR4")
+  if ( str_sub(indic(),1,3)%in% c("log","nod","cho","spo","par","pau","id1","gin","par","esp","sat","cyc","mos")
         
         & input$reg>=0)
     
   { 
 
   #---------------------------definition des couleurs ---------------------------
-   couleur<- case_when(
+
+    couleur<- case_when(
      #PARIS
-      indic() %in% c("logsur17","logsur16") ~'Reds',
+      indic() %in% c("logsur17","logsur16") ~'PuRd',
       indic() == "partsport16" ~'Blues',
       indic() %in% c("nodip17","nodip12","nodip07") ~'YlOrRd',
       indic() %in% c("chom1524hf17","chom1524hf12","chom1524hf07") ~'RdBu',
@@ -249,15 +256,25 @@ output$carto <- renderLeaflet({
       indic() %in% c("chom5564hf17","chom5564hf12","chom5564hf07") ~'PuOr',
       indic() %in% c("sport014f16","sport1529f16","sport3059f16","sport60plusf16") ~'BuPu',     
       indic() == "partsaless15" ~'Purples',
-      indic() %in% c("partvoit17","partvoit12","partvoit07") ~'PuRd',
-      indic() %in% c("parttec17 ","parttec12","parttec07") ~'Greens',
-      indic() %in% c("partaut17 ","partaut12","partaut07") ~'YlOrBr',
+      indic() %in% c("partvoit17","partvoit12","partvoit07") ~'Reds',
+      indic() %in% c("parttec17","parttec12","parttec07") ~'Greens',
+      indic() %in% c("partaut17","partaut12","partaut07") ~'YlOrBr',
       #ARRONDISSMENT   
       str_sub(indic(),1,4)=='pauv' ~'YlOrBr',
       str_sub(indic(),1,9)=='partsport' ~'Blues',
       indic() %in% c("id17","id16","id15","id14") ~'PuRd',
-      indic() %in% c("GR1","GR2","GR3","GR4") ~'PuOr'
-         
+      str_sub(indic(),1,4)=='gini' ~'YlGnBu',
+      indic() =="partnotrans17"~'OrRd',
+      indic() %in% c("parttec17_a","partmarche17","partvelo17","part2roues17","espver17","cyc4km20","cyc8km20","mosf17","mosms17")~'Greens', 
+      indic() %in% c("partvoit17_a","satur12") ~'Reds',
+      indic()=='mosa17' ~'RdPu',
+      indic()=='mosc17' ~'YlOrBr',
+      indic()=='mose17' ~'Blues',
+      indic()=='moseq17' ~'Purple',
+      indic()=='mosea17' ~'YlOrBr',
+      indic()=='moseo17' ~'Greys',
+      indic()%in%c("moshc17","most17") ~'BuPu',
+      indic()=='moshi17' ~'Oranges'
     )
   
   
@@ -295,10 +312,29 @@ output$carto <- renderLeaflet({
     {bins<-c(5,10,15,20,25,30,35,40,45,100)
     }else if (indic() %in% c("id17","id16","id15","id14"))                      
     {bins<-c(0,2,2.5,3,3.5,4,4.5,5,5.5,6,10)
-      }else if (indic() %in% c("GR1","GR2","GR3","GR4"))                      
-    {bins<-c(0,1.5,2.5,3.5,4.5,5.5)
+    }else if (str_sub(indic(),1,4)=='gini')                      
+    {bins<-c(0.22,0.24,0.26,0.28,0.3,0.32,0.34,0.36,0.38,0.40,1)
+    }else if (indic() %in% c("partnotrans17","partmarche17"))                     
+    {bins<-c(0,0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.5)
+    }else if (indic() %in% c("partvelo17","part2roues17"))                     
+    {bins<-c(0,0.005,0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.2)
+    }else if (indic() %in% c("partvoit17_a","mosea17"))                     
+    {bins<-c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1)
+    }else if (indic()%in%c("parttec17_a","mosf17","moshc17","moshi17"))                    
+    {bins<-c(0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,1)
+    }else if (indic()=="espver17")                    
+    {bins<-c(0,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1)
+    }else if (indic()=="satur12")                    
+    {bins<-c(0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,1)
+    }else if (indic() %in% c("cyc4km20","cyc8km20"))                     
+    {bins<-c(0,1,2,3,4,5,6,7,8,9,10,20)
+    }else if (indic()%in% c("mosa17","mosms17","most17"))                    
+    {bins<-c(0,0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.5)
+    }else if (indic() %in% c("mosc17","mose17","moseq17"))                    
+    {bins<-c(0,0.005,0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.5)
+    }else if (indic()=="moseo17")                    
+    {bins<-c(0,0.02,0.04,0.06,0.08,0.01,0.12,0.14,0.16,0.18,0.2,0.5)
     }
-
 
  
  # inverse la palette de couleur pour la catégorie chomage
@@ -311,22 +347,12 @@ output$carto <- renderLeaflet({
 pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
     
 
-   
-  leaflet(var_odd_geom4326, options = leafletOptions(zoomControl = TRUE)) %>%
-      addTiles() %>%  #Add default OpenStreetMap map tiles
+  leaflet(var_odd_geom4326, options = leafletOptions(zoomControl = FALSE)) %>%
+      addProviderTiles("Esri.WorldImagery")%>%
+      addTiles(group = "OpenStreetMap") %>%  #Add default OpenStreetMap map tiles
      setView(lng = 2.342,lat = 48.756, zoom = 9.47) %>%
-    addMarkers(data = dep_geom4326,
-               lng=~x, lat=~y,
-               label = ~dep_geom4326$nom_dep,
-               options = markerOptions(opacity=0),
-               labelOptions = labelOptions(noHide = F, textOnly = TRUE,textsize = "10px",style = list(
-                 "color" = "black",
-                 "font-family" = "arial",
-                 "font-style" = "italic",
-                 "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
-                 "font-size" = "12px",
-                 "border-color" = "rgba(0,0,0,0.5)"
-               )))%>%   
+    addMarkers(runif(20, 41, 42),runif(20, -75, -74)) %>%
+    addLayersControl(baseGroups = c("OpenStreetMap", "Esri.WorldImagery"),overlayGroups = libelle)%>%
     addMarkers(data = var_odd_geom4326,
                lng=~x, lat=~y,
                label = paste(var_odd_geom4326$libgeo,": ",as.numeric(data_geom4326),seq=""),
@@ -339,9 +365,11 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
                   opacity = 0.5,
                   color = "white",
                   dashArray = "3",
-                 fillOpacity = 0.7)%>%
+                 fillOpacity = 0.7,
+                group =  libelle
+                )  %>%
     addPolygons(data = dep_geom4326,
-                weight = 1,
+                weight = 1.3,
                 smoothFactor = 1,
                 opacity = 0.8,
                 color = "black",
@@ -370,9 +398,12 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
     indic() == "consonrj15" ~rgb(23, 101, 125, maxColorValue = 255),
     indic() == "consonrj12" ~rgb(53, 122, 183, maxColorValue = 255),
     indic() == "consonrj10" ~rgb(53, 151, 151, maxColorValue = 255),
-    indic() == "consonrj05" ~rgb(43, 151, 90, maxColorValue = 255)
-    
-    
+    indic() == "consonrj05" ~rgb(43, 151, 90, maxColorValue = 255),
+    indic()=='ges17'~rgb(47, 30, 14, maxColorValue = 255),
+    indic()=='ges15'~rgb(237, 0, 0, maxColorValue = 255),
+    indic()=='ges12'~rgb(204, 85, 0, maxColorValue = 255),
+    indic()=='ges10'~rgb(243, 214, 23, maxColorValue = 255),
+    indic()=='ges05'~rgb(0, 204, 203, maxColorValue = 255)
   )
   
   
@@ -380,23 +411,27 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
     #PARIS
     indic() == "empass15" ~'0.5',
     indic()%in% c("empcoop15","empfond15","empmut15","ecoent16","ecoent11","ecoent06")  ~'1',
-    str_sub(indic(),1,8)=='consonrj'~'0.01'
+    str_sub(indic(),1,8)=='consonrj'~'0.01',
+    str_sub(indic(),1,3)=='ges'~'1'
 )
 
   
   
 
   
- 
-  
-  
-
-  
-  
-  
   leaflet(odd_geom4326_sans_0, options = leafletOptions(zoomControl = FALSE)) %>%
-    addTiles() %>%  #Add default OpenStreetMap map tiles
+    addProviderTiles("Esri.WorldImagery")%>%
+    addTiles(group = "OpenStreetMap") %>%  #Add default OpenStreetMap map tiles
     setView(lng = 2.342,lat = 48.756, zoom = 9.47) %>%
+    addMarkers(runif(20, 41, 42),runif(20, -75, -74)) %>%
+    addLayersControl(baseGroups = c("OpenStreetMap", "Esri.WorldImagery"),overlayGroups = libelle)%>%
+    addPolygons(data = dep_geom4326,
+                weight = 1,
+                smoothFactor = 1,
+                opacity = 0.8,
+                color = "white",
+                dashArray = "3",
+                fillOpacity = 0.5)%>%
     addPolygons(data = odd_geom4326,
                 weight = 0.5,
                 smoothFactor = 1,
@@ -405,7 +440,7 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
                 dashArray = "3",
                 fillOpacity = 0)%>%
     addPolygons(data = dep_geom4326,
-                weight = 1,
+                weight = 1.3,
                 smoothFactor = 1,
                 opacity = 0.8,
                 color = "black",
@@ -414,15 +449,16 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
     addCircleMarkers(data = odd_geom4326_sans_0,
             label = paste(odd_geom4326_sans_0$libgeo,": ",as.numeric(data_geom4326_0),seq=""),
             lng=~x, lat=~y, 
-               weight = 2.5,
+               weight = 1,
             opacity = 1,
                radius = ~sqrt(as.numeric(data_geom4326_0)/pi) * as.numeric(taille_c),
                fillOpacity = 0.7,
             fill = TRUE,
             stroke=TRUE,
                popup=~as.numeric(data_geom4326_0),
-               color=couleur_c
-                #color=rgb(255, 35, 0, maxColorValue = 255)
+               color="white",
+            fillColor =couleur_c,
+            group=libelle
             )
               #%>%
     #addLegend(pal = pal, values = ~as.numeric(var()), opacity = 0.7, title = NULL,
@@ -478,6 +514,9 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
       labs(y = input$Indicateur)+
       labs(title = graph_title)+
       theme(legend.title = element_blank(), legend.position = "right", plot.title = element_text(size=10)) +
+     scale_color_viridis(option = "D")+
+  theme_minimal() +
+  theme(legend.position = "bottom") +
       scale_x_continuous(breaks = 
                              c(min(filtered_data()$annee, na.rm = TRUE):max(filtered_data()$annee, na.rm = TRUE)))##conserver uniquement les années sur l'axe x 
             
@@ -492,8 +531,6 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
       code = print(G)))
                                         
   })
-     
-    
      
     
 
