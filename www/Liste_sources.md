@@ -99,8 +99,8 @@ Indicateur 11.1 : Part modale trajet  domicile/travail
   Source : Tableaux détaillés - Population active de 15 ans ou plus ayant un emploi par sexe, lieu de travail (géographie urbaine) et moyen de transport, Insee, RP, 2017																																			
 																																							
 																																							
-Indicateur 11.2 : Part d’espaces verts				Source : MOS, Institut Paris Région 																																			
-				https://data.iledefrance.fr/explore/dataset/mode-doccupation-du-sol-mos-en-11-postes-en-2017/information/																																			
+Indicateur 11.2 : Part d’espaces verts				
+	Source : MOS, Institut Paris Région 																		https://data.iledefrance.fr/explore/dataset/mode-doccupation-du-sol-mos-en-11-postes-en-2017/information/																																			
 																																							
 																																							
 Indicateur 11.3 : Saturation routière				
@@ -127,10 +127,8 @@ Indicateur 14.2 : Surconcentration de pesticides en eau de surface
 	Indicateur i033b
 																																			
 																																							
-Indicateur 15.1 : Mode d’occupation du Sol				Source : MOS, Institut Paris Région 																																			
-				https://data.iledefrance.fr/explore/dataset/mode-doccupation-du-sol-mos-en-11-postes-en-2017/information/																																			
-![image](https://user-images.githubusercontent.com/75802299/110952330-6166ab80-8346-11eb-88f0-9b3d56dcb83f.png)
-
+Indicateur 15.1 : Mode d’occupation du Sol
+	Source : MOS, Institut Paris Région 																		https://data.iledefrance.fr/explore/dataset/mode-doccupation-du-sol-mos-en-11-postes-en-2017/information/																																			
 Indicateur 15.2 : Part de ZNIEFF 				
   Source(s) : Kit Antidote
 				
