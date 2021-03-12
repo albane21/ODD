@@ -55,7 +55,7 @@ odd_arrdt_geom4326<-com2020_arrdt_geom4326%>%inner_join(bdd_odd_arrdt,by=c("code
 dep_geom4326<- sf::read_sf(dsn ="./data/l_dep_bdt_s_r11_geom4326.gpkg")
 
 #----------------BDD_GRAPH------------------------------#
-bdd_graph <- read.csv("./data/bdd_graph.csv")
+bdd_graph <- read.csv("./data/bdd_graph.csv",sep=";",dec=",",fileEncoding = "UTF-8")
 
 #+++++++++++++++++++ Define UI for application that draws a histogram++++++++++++++++++++++++++++++++++++++++++
 ui <- tagList(
