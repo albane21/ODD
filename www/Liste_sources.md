@@ -22,10 +22,12 @@ Indicateur 3.1 : Accessibilité Potentielle Localisée aux médecins générali
   
 																																							
 Indicateur 3.2 : Nombre de licenciés sportifs pour 100 habitants				
-  Source : https://www.data.gouv.fr/fr/datasets/donnees-geocodees-issues-du-recensement-des-licences-et-clubs-aupres-des-federations-sportives-agreees-par-le-ministere-charge-des-sports/																																			
+  Source : https://www.data.gouv.fr/fr/datasets/donnees-geocodees-issues-du-recensement-des-licences-et-clubs-aupres-des-federations-sportives-agreees-par-le-ministere-charge-des-sports/																						
+  
 Indicateur 3.3 : Densité de médecin généralistes pour 10 000 habitants				
-  Source : https://cartosante.atlasante.fr/#c=indicator&f=0&i=gene_popage.eft&s=2019&view=map12																																			
-	Source :  https://cartosante.atlasante.fr/#c=indicator&f=0&i=pop_sexe_age.pop&s=2016&view=map12			
+  Source : https://cartosante.atlasante.fr/#c=indicator&f=0&i=gene_popage.eft&s=2019&view=map12											
+  Source :  https://cartosante.atlasante.fr/#c=indicator&f=0&i=pop_sexe_age.pop&s=2016&view=map12			
+  
   
  Indicateur 4.1 :Part des 20-24 ans non diplomés			
   Source : Kit Antidote, Insee	
