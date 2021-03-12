@@ -501,7 +501,16 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
    bdd_graph_2 <- filter(bdd_graph_2, libelle_non_annees==input$Indicateur)
   })   
      
-  output$trendPlot <- renderGirafe({
+   
+
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+
+
+
+output$trendPlot <- renderGirafe({
       graph_title  <- paste(input$COM, input$Indicateur,  sep=": ")
       G = ggplot(filtered_data_com(), aes(x = annee, y = valeur)) +
       geom_line(data=subset(filtered_data_com(),libgeo=="75056 Paris"), size= 2, alpha=0.8, color="purple",stat="identity") +
@@ -531,10 +540,3 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
       code = print(G)))
                                         
   })
-     
-    
-
-}
-
-# Run the application 
-shinyApp(ui = ui, server = server)
