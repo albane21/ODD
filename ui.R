@@ -16,6 +16,7 @@ library(viridis)
 library(shinyBS)
 library(tidyr)
 library(ggthemes)
+library(readxl)
 
 # définition de l'habillage carto
 
@@ -53,7 +54,8 @@ odd_arrdt_geom4326<-com2020_arrdt_geom4326%>%inner_join(bdd_odd_arrdt,by=c("code
 # ----------------------------HABILLAGE-----------------------------------------------------------------------
 dep_geom4326<- sf::read_sf(dsn ="./data/l_dep_bdt_s_r11_geom4326.gpkg")
 
-
+#----------------BDD_GRAPH------------------------------#
+bdd_graph <- read_excel("./data/bdd_graph.xlsx")
 
 #+++++++++++++++++++ Define UI for application that draws a histogram++++++++++++++++++++++++++++++++++++++++++
 ui <- tagList(
@@ -500,17 +502,8 @@ pal <- colorBin(couleur, domain =data_geom4326, bins = bins,reverse =inv)
    bdd_graph_2 <- bdd_graph   
    bdd_graph_2 <- filter(bdd_graph_2, libelle_non_annees==input$Indicateur)
   })   
-     
-   
-
-}
-
-# Run the application 
-shinyApp(ui = ui, server = server)
-
-
-
-output$trendPlot <- renderGirafe({
+  
+  output$trendPlot <- renderGirafe({
       graph_title  <- paste(input$COM, input$Indicateur,  sep=": ")
       G = ggplot(filtered_data_com(), aes(x = annee, y = valeur)) +
       geom_line(data=subset(filtered_data_com(),libgeo=="75056 Paris"), size= 2, alpha=0.8, color="purple",stat="identity") +
@@ -540,3 +533,14 @@ output$trendPlot <- renderGirafe({
       code = print(G)))
                                         
   })
+     
+   
+
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+
+
+
+
