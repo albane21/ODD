@@ -6,6 +6,7 @@ library(here)
 library(tidyverse)
 library(shinydashboard)
 library(leaflet)
+library(sf)
 library(shinycustomloader)
 library(RColorBrewer)
 library(ggplot2)
@@ -78,8 +79,8 @@ juste vers un développement durable d'ici à 2030.")),
                           h5("L'objectif de cet observatoire est d'élaborer un outil qui permet de situer la situation de sa commune, par rapport à la situation de communes semblables."),
                           h5("Nous avons donc créé des groupes rassemblants les communes similaires de le région Ile-de-France, en utilisant les critères suivants:"),
                           h5("-Le nombre d'habitants de la commune"),
-                          h5("-Le revenu médian des ménages de la commune"),
-                          h5("-Le potentiel fiscal de la commune")
+                          h5("-La densité humaine de la commune"),
+                          h5("-Le revenu médian des ménages de la commune")
                  )
                )
              )
@@ -508,6 +509,8 @@ server <- function(input, output,session) {
       geom_point(data=subset(filtered_data_com(),libgeo==input$COM),size = 3, alpha = 0.8, color="blue",stat="identity") +
     
   })
+  
+}
   
   
   
